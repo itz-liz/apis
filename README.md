@@ -8,12 +8,15 @@ Creacion de API's
 
 # Aplicacion 001
 1. Hacer una agenda, en este caso con sqlite3 con estos parametros  
+  
 |  Contactos    |              | 
 |:-------------:|:------------:|
 | id_contacto   | int PK       |
 | nombre        | varchar (100)|
 |email          | varchar (100)|
-|telefono       | varchar (100)|
+|telefono       | varchar (100)|  
+
+Insertar 100 regsitros
 
 2. Hacer un /docs  
 
@@ -48,7 +51,7 @@ Creacion de API's
 |7| Path param|NA|
 |8| Data|NA|
 |9| Status Code|202|
-|10| Response|{"table":"contactos", "items": [{"id_contacto":int, "nombre": str,"email": str, "telefono": str}],"count":int, "datetime": timestamp, "message":"Datos consultados exitosamente"}|
+|10| Response|{"table":"contactos", "items": [{"id_contacto":int, "nombre": str,"email": str, "telefono": str}],"count":int, "datetime": timestamp, "message":"Datos consultados exitosamente",limit":10,"skip":0}|
 |11| Response Type|application/json|
 |12| Status Code (error)|400, 401, 403, 404, 409, 422, 500, 501, 502, 503, 504|
 |13| Response Type(error) |applicaction/json|
