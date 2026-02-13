@@ -16,7 +16,7 @@ Creacion de API's
 |email          | varchar (100)|
 |telefono       | varchar (100)|  
 
-Insertar 100 regsitros
+Insertar 100 registros
 
 2. Hacer un /docs  
 
