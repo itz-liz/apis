@@ -76,8 +76,27 @@ Insertar 100 registros
 |11| Response Type|application/json|
 |12| Status Code (error)|400|
 |13| Response Type(error) |application/json|
-|14| Response (error)|{"table": "contactos","item": {},"count": 0, "datetime": timestamp, "message": "Contacto no encontrado"} |
+|14| Response (error)|{"table": "contactos","item": {},"count": 0, "datetime": timestamp, "message": "Contacto no encontrado"} / {"detail":"Error al buscar el registro", "datetime":"timestamp"}|
 |15| cURL|curl -X GET http://127.0.0.1:8000/v1/contactos/3|  
 
-{"error":"Error al buscar el registro"}´
+
+5. Insertar contacto  
+
+| No.      | Propiedad| Detalle  |
+|----------|----------|:----------:|
+|1| Description|Endpoint para insertar un contacto|
+|2| Summary|Inserta un contacto validando campos|
+|3| Method|POST|
+|4| Endpoint|/v1/contactos|
+|5| Authentication|NA|
+|6| Query param|NA|
+|7| Path param|NA|
+|8| Data|{"nombre": str, "email": str, "telefono": str}|
+|9| Status Code|201|
+|10| Response|{"table":"contactos", "item": {"id_contacto":int, "nombre": str, "email": str, "telefono": str}, "datetime": timestamp, "message":"Contacto insertado exitosamente"}|
+|11| Response Type|application/json|
+|12| Status Code (error)|400|
+|13| Response Type(error) |application/json|
+|14| Response (error)|{"detail":"Error en la base de datos", "datetime":"timestamp"} / {"message":"Campos vacios", "datetime":"timestamp"}|
+|15| cURL|curl -X POST http://127.0.0.1:8000/v1/contactos -H "Content-Type: application/json" -d '{"nombre":"Liz", "email":"liz@email.com", "telefono":"1234567890"}'|
 
