@@ -1,10 +1,12 @@
 from datetime import datetime
 from fastapi import FastAPI
+from fastapi import Query
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import sqlite3 as sqlite
+from typing import Optional
 
 app = FastAPI()
 
@@ -54,16 +56,27 @@ def startup_event():
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     message = "Error de validacion"
+    status_code = 400
     for error in exc.errors():
         loc = error.get("loc", [])
         if error.get("type") == "value_error.missing":
             message = "Campos vacios"
+            status_code = 401
+        error_type = error.get("type") or ""
+        if any(param in loc for param in ("limit", "skip", "id_contacto")) and (
+            error_type == "value_error.number.not_ge"
+            or "greater_than_equal" in error_type
+        ):
+            message = "valores negativos"
 
     return JSONResponse(
-        status_code=400,
+        status_code=status_code,
         content={
-            "message": message,
-            "datetime": _utc_timestamp()
+            "table": "contactos",
+            "item": {},
+            "count": 0,
+            "datetime": _utc_timestamp(),
+            "message": message
         }
     )
 
@@ -87,12 +100,65 @@ def get_root():
     limit:int -> Indica el número de registros a regresar
     skip:int -> Indica el número de registros a omitir"""
 )
-async def get_contactos(limit: int = 10, skip: int = 0):
+async def get_contactos(
+    limit: Optional[str] = Query(None),
+    skip: Optional[str] = Query(None)
+):
+    try:
+        limit_value = 10 if limit is None else int(limit)
+        skip_value = 0 if skip is None else int(skip)
+    except ValueError:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "table": "contactos",
+                "item": {},
+                "count": 0,
+                "datetime": _utc_timestamp(),
+                "message": "Error de validacion"
+            }
+        )
+
+    if limit_value < 0 and skip_value < 0:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "table": "contactos",
+                "item": {},
+                "count": 0,
+                "datetime": _utc_timestamp(),
+                "message": "limit y skip no pueden ser negativos"
+            }
+        )
+        
+    if limit_value < 0:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "table": "contactos",
+                "item": {},
+                "count": 0,
+                "datetime": _utc_timestamp(),
+                "message": "limit no puede ser negativo"
+            }
+        )
+    if skip_value < 0:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "table": "contactos",
+                "item": {},
+                "count": 0,
+                "datetime": _utc_timestamp(),
+                "message": "skip no puede ser negativo"
+            }
+        )
+    
     try:
         db = _get_db_connection()
         try:
             cursor = db.cursor()
-            cursor.execute("SELECT * FROM contactos LIMIT ? OFFSET ?", (limit, skip))
+            cursor.execute("SELECT * FROM contactos LIMIT ? OFFSET ?", (limit_value, skip_value))
             contactos = cursor.fetchall()
             items = [dict(row) for row in contactos]
 
@@ -106,8 +172,8 @@ async def get_contactos(limit: int = 10, skip: int = 0):
             "count": len(items),
             "datetime": _utc_timestamp(),
             "message": "Datos consultados exitosamente",
-            "limit":limit,
-            "skip":skip
+            "limit": limit_value,
+            "skip": skip_value
         }
         return JSONResponse(
             status_code=202,
@@ -122,9 +188,9 @@ async def get_contactos(limit: int = 10, skip: int = 0):
                 "items": [],
                 "count": 0,
                 "datetime": _utc_timestamp(),
-                "message": "Error al consultar los datos",
-                "limit":limit,
-                "skip":skip
+                "message": "Error al consultar la base de datos",
+                "limit": limit_value,
+                "skip": skip_value
                 }
             )
 
@@ -139,10 +205,13 @@ async def get_contactos(limit: int = 10, skip: int = 0):
 async def create_contacto(contacto: ContactoCreate):
     if not contacto.nombre.strip() or not contacto.telefono.strip() or not contacto.email.strip():
         return JSONResponse(
-            status_code=400,
+            status_code=401,
             content={
-                "message": "Campos vacios",
-                "datetime": _utc_timestamp()
+                "table": "contactos",
+                "item": {},
+                "count": 0,
+                "datetime": _utc_timestamp(),
+                "message": "Campos vacios"
             }
         )
 
@@ -189,6 +258,17 @@ async def create_contacto(contacto: ContactoCreate):
     description="Endpoint para buscar un contacto por id_contacto."
 )
 async def get_contacto(id_contacto: int):
+    if id_contacto < 0:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "table": "contactos",
+                "item": {},
+                "count": 0,
+                "datetime": _utc_timestamp(),
+                "message": "El id no puede ser negativo"
+            }
+        )
     try:
         db = _get_db_connection()
         try:
